@@ -163,3 +163,5 @@ ENV/
 /site
 
 # End of https://www.gitignore.io/api/python,pycharm
+assignment1/glove.6B/glove.6B.50d.txt
+assignment1/stanfordSentimentTreebank/
