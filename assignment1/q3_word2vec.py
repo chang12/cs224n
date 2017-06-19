@@ -58,11 +58,31 @@ def softmax_cost_and_gradient(predicted, target, output_vectors, dataset):
     assignment!
     """
 
-    ### YOUR CODE HERE
-    raise NotImplementedError
-    ### END YOUR CODE
+    N, D = output_vectors.shape
 
-    return cost, gradPred, grad
+    # u ~ output_vectors ~ [N x D] / v ~ predicted ~ [D, ]
+    exp = np.exp(output_vectors.dot(np.reshape(predicted, [D, 1])))  # [N x 1]
+    exp_sum = np.sum(exp)
+    p = exp / exp_sum
+    logp = np.log(p)
+    logp[target] = 0
+    cost = - np.sum(logp)
+
+    # grad_logp_pred = d(logp) / d(v_c) = u_o - sum_x=1_to_V(p(x|c) * u_x)
+    grad_pred = np.zeros(D)  # [D, ]
+    u_avg = np.sum(p * output_vectors, axis=0)
+    for o in range(N):
+        if o == target:
+            continue
+        grad_pred -= output_vectors[o] - u_avg
+
+    grad = np.zeros(N, D)
+    for o in range(N):
+        if o == target:
+            continue
+        grad += (p - np.eye(1, N, o).T) * predicted
+
+    return cost, grad_pred, grad
 
 
 def get_negative_samples(target, dataset, K):
