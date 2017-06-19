@@ -15,9 +15,9 @@ def normalize_rows(x):
     unit length.
     """
 
-    ### YOUR CODE HERE
-    raise NotImplementedError
-    ### END YOUR CODE
+    n, _ = x.shape
+    x_norm = np.reshape(np.linalg.norm(x, axis=1), [n, 1])
+    x = x / x_norm
 
     return x
 
