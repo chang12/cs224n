@@ -195,7 +195,7 @@ class StanfordSentiment:
         ds_split = self.dataset_split()
         return [(self.sentences()[i], self.categorify(self.sent_labels()[i])) for i in ds_split[split]]
 
-    def sampleTable(self):
+    def sample_table(self):
         if hasattr(self, '_sampleTable') and self._sampleTable is not None:
             return self._sampleTable
 
@@ -244,5 +244,5 @@ class StanfordSentiment:
         self._rejectProb = rejectProb
         return self._rejectProb
 
-    def sampleTokenIdx(self):
-        return self.sampleTable()[random.randint(0, self.tablesize - 1)]
+    def sample_token_idx(self):
+        return self.sample_table()[random.randint(0, self.tablesize - 1)]
