@@ -82,8 +82,7 @@ def get_negative_samples(target, dataset, K):
     return indices
 
 
-def neg_sampling_cost_and_gradient(predicted, target, output_vectors, dataset,
-                                   K=10):
+def neg_sampling_cost_and_gradient(predicted, target, output_vectors, dataset, K=10):
     """ Negative sampling cost function for word2vec models
 
     Implement the cost and gradients for one predicted word vector
@@ -102,27 +101,41 @@ def neg_sampling_cost_and_gradient(predicted, target, output_vectors, dataset,
     indices.extend(get_negative_samples(target, dataset, K))
 
     ### YOUR CODE HERE
-    raise NotImplementedError
+    _, dim = output_vectors.shape
+    u = output_vectors[indices, :]  # (K+1, D)
+    score = np.dot(u, np.reshape(predicted, [dim, 1]))  # (K+1, 1)
+    prob = sigmoid(score)  # (K+1, 1)
+    cost = - np.log(prob[0]) - np.sum(np.log(1 - prob[1:]))
+
+    # sigmoid(-x) = 1 - sigmoid(x) 인거 사용하면 좋음
+    # prob 에 대한 local gradient 는 구하기 쉬우므로, 거길 들렸다 가면 좋음
+    dprob = np.reshape(np.append(np.array([- 1 / prob[0]]), 1 / (1 - prob[1:])), [K + 1, 1])  # (K+1, 1)
+    dscore = sigmoid_grad(dprob)  # (K+1, 1)
+    du = np.dot(dscore, np.reshape(predicted, [1, dim]))  # (K+1, D)
+    dv = np.dot(u.T, dscore)
+    grad = np.zeros_like(output_vectors)
+    grad[indices, :] = du  # (N, D)
+    grad_pred = dv
     ### END YOUR CODE
 
-    return cost, gradPred, grad
+    return cost, grad_pred, grad
 
 
-def skipgram(currentWord, C, contextWords, tokens, inputVectors, outputVectors,
-             dataset, word2vecCostAndGradient=softmax_cost_and_gradient):
+def skipgram(current_word, C, context_words, tokens, input_vectors, output_vectors,
+             dataset, word2vec_cost_and_gradient=softmax_cost_and_gradient):
     """ Skip-gram model in word2vec
 
     Implement the skip-gram model in this function.
 
     Arguments:
-    currrentWord -- a string of the current center word
+    current_word -- a string of the current center word
     C -- integer, context size
-    contextWords -- list of no more than 2*C strings, the context words
+    context_words -- list of no more than 2*C strings, the context words
     tokens -- a dictionary that maps words to their indices in
               the word vector list
-    inputVectors -- "input" word vectors (as rows) for all tokens
-    outputVectors -- "output" word vectors (as rows) for all tokens
-    word2vecCostAndGradient -- the cost and gradient function for
+    input_vectors -- "input" word vectors (as rows) for all tokens
+    output_vectors -- "output" word vectors (as rows) for all tokens
+    word2vec_cost_and_gradient -- the cost and gradient function for
                                a prediction vector given the target
                                word vectors, could be one of the two
                                cost functions you implemented above.
