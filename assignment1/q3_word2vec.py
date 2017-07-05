@@ -57,19 +57,15 @@ def softmax_cost_and_gradient(predicted, target, output_vectors, dataset):
     num, dim = output_vectors.shape
 
     # u ~ output_vectors ~ [N x D] / v ~ predicted ~ [D, ]
-    score = output_vectors.dot(np.reshape(predicted, [dim, 1]))  # N x 1
-    prob = np.exp(score) / np.sum(np.exp(score))  # N x 1
-    cost = - np.sum(np.log(prob[target]))  # 1,
-
-    # 강의자료에서도 보였던 내용 = - d(logp) / d(v_c) = sum_x=1_to_V(p(x|c) * u_x) - u_o
-    u_avg = np.sum(prob * output_vectors, axis=0)
-    grad_pred = u_avg - output_vectors[target]  # [D, ]
+    score = np.dot(output_vectors, predicted)  # (N, )
+    prob = softmax(score)  # (N, )
+    cost = - np.log(prob[target])  # 1,
 
     # score (N x 1)= output_vectors (N x D) x predicted (D x 1)
     # doutput_vectors = dscore (N x 1) x predicted^T (1 x D)
-    dscore = prob - np.eye(1, num, target).T
-    doutput_vectors = np.dot(dscore, np.reshape(predicted, [1, dim]))
-    grad = doutput_vectors
+    dscore = prob - np.eye(num)[target]  # (N, )
+    grad = np.outer(dscore, predicted)
+    grad_pred = np.dot(output_vectors.T, dscore)
 
     return cost, grad_pred, grad
 
