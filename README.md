@@ -1,0 +1,1 @@
+repository for studying [cs224n lecture in 2017](http://web.stanford.edu/class/cs224n/) 
