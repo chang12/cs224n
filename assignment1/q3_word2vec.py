@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# coding=utf-8
 
 import numpy as np
 import random
@@ -9,17 +10,11 @@ from q2_sigmoid import sigmoid, sigmoid_grad
 
 
 def normalize_rows(x):
-    """ Row normalization function
-
+    """
     Implement a function that normalizes each row of a matrix to have
     unit length.
     """
-
-    n, _ = x.shape
-    x_norm = np.reshape(np.linalg.norm(x, axis=1), [n, 1])
-    x = x / x_norm
-
-    return x
+    return x / np.reshape(np.linalg.norm(x, axis=1), [x.shape[0], 1])
 
 
 def test_normalize_rows():
@@ -42,6 +37,7 @@ def softmax_cost_and_gradient(predicted, target, output_vectors, dataset):
     Arguments:
     predicted -- numpy ndarray, predicted word vector (\hat{v} in
                  the written component)
+
     target -- integer, the index of the target word
     output_vectors -- "output" vectors (as rows) for all tokens
     dataset -- needed for negative sampling, unused here.
