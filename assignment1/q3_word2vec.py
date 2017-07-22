@@ -99,22 +99,21 @@ def neg_sampling_cost_and_gradient(predicted, target, output_vectors, dataset, K
     # wish to match the autograder and receive points!
     indices = [target]
     indices.extend(get_negative_samples(target, dataset, K))
+    mask = - np.ones(len(indices))
+    mask[0] = 1
 
-    ### YOUR CODE HERE
-    _, dim = output_vectors.shape
     u = output_vectors[indices, :]  # (K+1, D)
-    score = np.dot(u, np.reshape(predicted, [dim, 1]))  # (K+1, 1)
-    prob = sigmoid(score)  # (K+1, 1)
-    cost = - np.log(prob[0]) - np.sum(np.log(1 - prob[1:]))
+    score = mask * np.dot(u, predicted)  # (K+1, ), mask 를 곱하는 이유는 neg sampling 이기 때문.
+    prob = sigmoid(score)  # (K+1, )
+    cost = - np.sum(np.log(prob))
 
-    # sigmoid(-x) = 1 - sigmoid(x) 인거 사용하면 좋음
-    # prob 에 대한 local gradient 는 구하기 쉬우므로, 거길 들렸다 가면 좋음
-    dprob = np.reshape(np.append(np.array([- 1 / prob[0]]), 1 / (1 - prob[1:])), [K + 1, 1])  # (K+1, 1)
-    dscore = sigmoid_grad(dprob)  # (K+1, 1)
-    du = np.dot(dscore, np.reshape(predicted, [1, dim]))  # (K+1, D)
+    dprob = - 1.0 / prob
+    dscore = mask * sigmoid_grad(dprob)
+    du = np.outer(dscore, predicted)  # (K+1, D)
     dv = np.dot(u.T, dscore)
     grad = np.zeros_like(output_vectors)
-    grad[indices, :] = du  # (N, D)
+    for i, index in enumerate(indices):
+        grad[index] += du[i]
     grad_pred = dv
     ### END YOUR CODE
 
@@ -146,14 +145,24 @@ def skipgram(current_word, C, context_words, tokens, input_vectors, output_vecto
     """
 
     cost = 0.0
-    gradIn = np.zeros(inputVectors.shape)
-    gradOut = np.zeros(outputVectors.shape)
+    grad_in = np.zeros(input_vectors.shape)
+    grad_out = np.zeros(output_vectors.shape)
 
+    # input_vectors ~ grad_in ~ grad_pred ~ v
+    # output_vectors ~ grad_out ~ grad ~ u
     ### YOUR CODE HERE
-    raise NotImplementedError
+    current_word_vec_idx = tokens[current_word]
+    current_word_vec = input_vectors[current_word_vec_idx]
+    for context_word in context_words:
+        predicted = current_word_vec
+        target = tokens[context_word]
+        c, grad_pred, grad = word2vec_cost_and_gradient(predicted, target, output_vectors, dataset)
+        cost = cost + c
+        grad_out = grad_out + grad
+        grad_in[current_word_vec_idx] += np.squeeze(grad_pred)
     ### END YOUR CODE
 
-    return cost, gradIn, gradOut
+    return cost, grad_in, grad_out
 
 
 def cbow(currentWord, C, contextWords, tokens, inputVectors, outputVectors,
@@ -259,3 +268,42 @@ def test_word2vec():
 if __name__ == "__main__":
     test_normalize_rows()
     test_word2vec()
+
+    random.seed(31415)
+    np.random.seed(9265)
+
+    num, dim = 5, 10
+    tokens = dict(a=0, b=1, c=2, d=3, e=4)
+    current_word = "c"
+    C = 2
+    context_words = ["a", "b", "d", "e"]
+    input_vectors = np.random.randn(num, dim)
+    output_vectors = np.random.randn(num, dim)
+
+    dataset = type('dummy', (), {})()
+    def dummySampleTokenIdx():
+        return random.randint(0, 4)
+    def getRandomContext(C):
+        tokens = ["a", "b", "c", "d", "e"]
+        return tokens[random.randint(0, 4)], \
+               [tokens[random.randint(0, 4)] for i in xrange(2 * C)]
+    dataset.sample_token_idx = dummySampleTokenIdx
+    dataset.getRandomContext = getRandomContext
+
+    cost, grad_in, grad_out = skipgram(current_word, C, context_words, tokens, input_vectors, output_vectors,
+                                       dataset, word2vec_cost_and_gradient=neg_sampling_cost_and_gradient)
+    print "===========cost==========="
+    print cost
+    print "===========grad_in========"
+    print grad_in
+    print "===========grad_out======="
+    print grad_out
+
+    # random.seed(31415)
+    # np.random.seed(9265)
+    # num, dim = 5, 10
+    # predicted = np.random.randn(dim)
+    # target = 0
+    # output_vectors = np.random.randn(num, dim)
+    # cost, grad_pred, grad = softmax_cost_and_gradient(predicted, target, output_vectors, None)
+    # print cost, grad_pred, grad

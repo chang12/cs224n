@@ -15,7 +15,6 @@ def gradcheck_naive(f, x):
     """
 
     rndstate = random.getstate()
-    random.setstate(rndstate)
     fx, grad = f(x) # Evaluate function value at original point
     h = 1e-4        # Do not change this!
 
@@ -32,7 +31,9 @@ def gradcheck_naive(f, x):
         ### YOUR CODE HERE:
         dx = np.zeros(x.shape)
         dx[ix] = h
+        random.setstate(rndstate)
         fxplus, _ = f(x + dx)
+        random.setstate(rndstate)
         fxminus, _ = f(x - dx)
         numgrad = (fxplus - fxminus) / (2*h)
         ### END YOUR CODE
